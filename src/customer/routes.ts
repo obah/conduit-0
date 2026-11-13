@@ -10,3 +10,27 @@ customersRouter.post(
   validate(schemas.createCustomerSchema),
   handlers.createCustomer,
 );
+
+customersRouter.get(
+  "/",
+  validate(schemas.listCustomers),
+  handlers.listCustomers,
+);
+
+customersRouter.get(
+  "/:id",
+  validate(schemas.getCustomer),
+  handlers.getCustomerById,
+);
+
+customersRouter.patch(
+  "/:id",
+  validate(schemas.updateCustomer),
+  handlers.updateCustomer,
+);
+
+customersRouter.delete(
+  "/:id",
+  validate(schemas.deleteCustomer),
+  handlers.deleteCustomer,
+);

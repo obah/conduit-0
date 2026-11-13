@@ -17,14 +17,23 @@ export type ValidatedRequest<S extends RequestSchemas> = Request<
   Output<S, "query", Request["query"]>
 >;
 
-export function validate(schemas: RequestSchemas): RequestHandler {
+export type ValidatedRequestHandler<S extends RequestSchemas> = RequestHandler<
+  Output<S, "params", Request["params"]>,
+  unknown,
+  Output<S, "body", unknown>,
+  Output<S, "query", Request["query"]>
+>;
+
+export function validate<S extends RequestSchemas>(
+  schemas: S,
+): ValidatedRequestHandler<S> {
   const schema = z.object({
     params: schemas.params ?? z.strictObject({}),
     query: schemas.query ?? z.strictObject({}),
     body: schemas.body ?? z.undefined(),
   });
 
-  return (req: Request, _res: Response, next: NextFunction) => {
+  const middleware = (req: Request, _res: Response, next: NextFunction) => {
     const parsed = schema.parse({
       params: req.params,
       query: req.query,
@@ -43,4 +52,6 @@ export function validate(schemas: RequestSchemas): RequestHandler {
 
     next();
   };
+
+  return middleware as unknown as ValidatedRequestHandler<S>;
 }

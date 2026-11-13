@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { pool } from "../src/config/db";
+import { pool } from "../src/utils/db";
 
 const dir = join(import.meta.dirname, "../migrations");
 
