@@ -1,6 +1,6 @@
 import express from "express";
-import healthRouter from "./routes/health.route";
 import { config } from "./config/config";
+import { healthRouter } from "./health/route";
 
 const app = express();
 

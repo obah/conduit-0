@@ -1,5 +1,8 @@
 import { Request, Response } from "express";
 import { pool } from "../config/db";
+import { Router } from "express";
+
+export const healthRouter = Router();
 
 const checkHealth = async (req: Request, res: Response) => {
   try {
@@ -20,4 +23,4 @@ const checkHealth = async (req: Request, res: Response) => {
   }
 };
 
-export { checkHealth };
+healthRouter.get("/", checkHealth);
