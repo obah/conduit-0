@@ -1,11 +1,22 @@
 import express from "express";
-import { config } from "./config/config";
+import { config } from "./utils/config";
 import { healthRouter } from "./health/route";
+import { customersRouter } from "./customer/routes";
+import { errorHandler } from "./middleware/error-handler";
+import { httpLogger } from "./middleware/http-logger";
+import { notFound } from "./middleware/not-found";
 
-const app = express();
+export function createApp() {
+  const app = express();
 
-app.use(express.json({ limit: config.BODY_LIMIT }));
+  app.use(httpLogger);
+  app.use(express.json({ limit: config.BODY_LIMIT }));
 
-app.use("/api/health", healthRouter);
+  app.use("/api/health", healthRouter);
+  app.use("/api/customers", customersRouter);
 
-export { app };
+  app.use(notFound);
+  app.use(errorHandler);
+
+  return app;
+}

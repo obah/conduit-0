@@ -1,9 +1,15 @@
-import { config } from "./config/config";
-import { app } from "./app";
-import { pool } from "./config/db";
+import { config } from "./utils/config";
+import { createApp } from "./app";
+import { pool } from "./utils/db";
+import { logger } from "./utils/logger";
 
-const server = app.listen(config.PORT, () => {
-  console.log(`Listening on PORT: ${config.PORT}`);
+const server = createApp().listen(config.PORT, (err) => {
+  if (err) {
+    logger.fatal({ err }, "Server failed to start");
+    process.exit(1);
+  }
+
+  logger.info({ port: config.PORT }, "Server listening");
 });
 
 function shutdown(signal: string) {
