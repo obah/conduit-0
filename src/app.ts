@@ -5,6 +5,7 @@ import { customersRouter } from "./customer/routes";
 import { errorHandler } from "./middleware/error-handler";
 import { httpLogger } from "./middleware/http-logger";
 import { notFound } from "./middleware/not-found";
+import { accountsRouter } from "./account/route";
 
 export function createApp() {
   const app = express();
@@ -14,6 +15,7 @@ export function createApp() {
 
   app.use("/api/health", healthRouter);
   app.use("/api/customers", customersRouter);
+  app.use("/api/accounts", accountsRouter);
 
   app.use(notFound);
   app.use(errorHandler);

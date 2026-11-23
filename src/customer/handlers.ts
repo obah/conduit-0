@@ -1,4 +1,4 @@
-import { Response, Request } from "express";
+import { Response } from "express";
 import * as customers from "./repository";
 import * as schemas from "./schema";
 import { ValidatedRequest } from "../middleware/validate";

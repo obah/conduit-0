@@ -14,6 +14,11 @@ type Customer = {
   deletedAt: Date | null;
 };
 
+type DeleteCustomerResult =
+  | { kind: "deleted"; customer: Customer }
+  | { kind: "not_found" }
+  | { kind: "has_open_accounts" };
+
 const COLUMNS = `id, name, email, created_at AS "createdAt", updated_at AS "updatedAt", deleted_at AS "deletedAt"`;
 
 export async function create(input: CreateCustomerInput): Promise<Customer> {
@@ -71,14 +76,48 @@ export async function update(
   return rows[0];
 }
 
-export async function deleteById(id: string): Promise<Customer | undefined> {
-  const { rows } = await pool.query<Customer>(
-    `UPDATE customers
-     SET deleted_at = now()
-     WHERE id = $1 AND deleted_at IS NULL
-     RETURNING ${COLUMNS}`,
-    [id],
-  );
+export async function deleteById(id: string): Promise<DeleteCustomerResult> {
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-  return rows[0];
+    const found = await client.query(
+      `SELECT 1 FROM customers WHERE id = $1 AND deleted_at IS NULL FOR UPDATE`,
+      [id],
+    );
+
+    if (!found.rowCount) {
+      await client.query("ROLLBACK");
+      return { kind: "not_found" };
+    }
+
+    const open = await client.query(
+      `SELECT 1 FROM accounts WHERE customer_id = $1 AND status <> 'closed' LIMIT 1`,
+      [id],
+    );
+
+    if (open.rowCount) {
+      await client.query("ROLLBACK");
+      return { kind: "has_open_accounts" };
+    }
+
+    const { rows } = await client.query<Customer>(
+      `UPDATE customers SET deleted_at = now(), updated_at = now()
+        WHERE id = $1
+        RETURNING ${COLUMNS}`,
+      [id],
+    );
+    const customer = rows[0];
+    if (!customer) {
+      throw new Error("Failed to delete customer: no row returned");
+    }
+
+    await client.query("COMMIT");
+    return { kind: "deleted", customer };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
