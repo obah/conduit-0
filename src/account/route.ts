@@ -6,7 +6,7 @@ import * as schemas from "./schema";
 export const accountsRouter = Router();
 
 accountsRouter.post(
-  "/",
+  "/:id",
   validate(schemas.createAccountSchema),
   handlers.createAccount,
 );
