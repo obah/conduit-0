@@ -1,4 +1,3 @@
--- migrations/003_accounts.sql
 CREATE TABLE accounts (
   id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   customer_id uuid NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,

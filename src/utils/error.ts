@@ -42,6 +42,12 @@ export class ConflictError extends AppError {
   }
 }
 
+export class TooManyRequestsError extends AppError {
+  constructor(message = "Too many requests") {
+    super(429, "TOO_MANY_REQUESTS", message);
+  }
+}
+
 export class NotImplementedError extends AppError {
   constructor(message = "Not implemented") {
     super(501, "NOT_IMPLEMENTED", message);
