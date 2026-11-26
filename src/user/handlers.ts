@@ -1,5 +1,5 @@
+import { Request, Response } from "express";
 import { ValidatedRequest } from "../middleware/validate";
-import { Response } from "express";
 import * as schemas from "./schema";
 import * as users from "./repository";
 import {
@@ -8,6 +8,7 @@ import {
   verifyPassword,
 } from "../utils/password";
 import { TooManyRequestsError, UnauthorizedError } from "../utils/error";
+import { ACCESS_TOKEN_TTL_SECONDS, signAccessToken } from "../utils/jwt";
 
 const MAX_LOGIN_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
@@ -22,7 +23,14 @@ export async function signUp(
   });
 
   const user = await users.create(hashedPayload);
-  res.status(201).json(user);
+  const accessToken = await signAccessToken(user.id);
+
+  res.status(201).json({
+    accessToken,
+    tokenType: "Bearer",
+    expiresIn: ACCESS_TOKEN_TTL_SECONDS,
+    user,
+  });
 }
 
 export async function login(
@@ -32,7 +40,9 @@ export async function login(
   const user = await users.findByEmail(req.body.email);
 
   if (user?.lockedUntil && user.lockedUntil > new Date()) {
-    throw new TooManyRequestsError("Too many failed attempts. Try again later.");
+    throw new TooManyRequestsError(
+      "Too many failed attempts. Try again later.",
+    );
   }
 
   const valid = await verifyPassword(
@@ -53,11 +63,23 @@ export async function login(
 
   await users.resetFailedLogins(user.id);
 
+  const accessToken = await signAccessToken(user.id);
+
   res.status(200).json({
-    id: user.id,
-    email: user.email,
-    createdAt: user.createdAt,
+    accessToken,
+    tokenType: "Bearer",
+    expiresIn: ACCESS_TOKEN_TTL_SECONDS,
+    user: { id: user.id, email: user.email, createdAt: user.createdAt },
   });
+}
+
+export async function logout(req: Request, res: Response) {
+  if (!req.auth) {
+    throw new UnauthorizedError("Missing bearer token");
+  }
+
+  await users.revokeToken(req.auth.tokenId, req.auth.expiresAt);
+  res.status(204).send();
 }
 
 export async function listUsers(

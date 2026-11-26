@@ -7,6 +7,7 @@ import { httpLogger } from "./middleware/http-logger";
 import { notFound } from "./middleware/not-found";
 import { accountsRouter } from "./account/route";
 import { userRouter } from "./user/routes";
+import { authenticateToken } from "./middleware/require-auth";
 
 export function createApp() {
   const app = express();
@@ -14,8 +15,11 @@ export function createApp() {
   app.use(httpLogger);
   app.use(express.json({ limit: config.BODY_LIMIT }));
 
-  app.use("/api/user", userRouter);
   app.use("/api/health", healthRouter);
+  app.use("/api/user", userRouter);
+
+  app.use(authenticateToken);
+
   app.use("/api/customers", customersRouter);
   app.use("/api/accounts", accountsRouter);
 

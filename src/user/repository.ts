@@ -89,3 +89,32 @@ export async function list(query: ListUsersQuery): Promise<User[]> {
 
   return rows;
 }
+
+export async function revokeToken(
+  tokenId: string,
+  expiresAt: Date,
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO revoked_tokens (token_id, expires_at)
+     VALUES ($1, $2)
+     ON CONFLICT (token_id) DO NOTHING`,
+    [tokenId, expiresAt],
+  );
+}
+
+export async function isTokenRevoked(tokenId: string): Promise<boolean> {
+  const { rowCount } = await pool.query(
+    `SELECT 1 FROM revoked_tokens WHERE token_id = $1`,
+    [tokenId],
+  );
+
+  return (rowCount ?? 0) > 0;
+}
+
+export async function pruneExpiredRevokedTokens(): Promise<number> {
+  const { rowCount } = await pool.query(
+    `DELETE FROM revoked_tokens WHERE expires_at < now()`,
+  );
+
+  return rowCount ?? 0;
+}
